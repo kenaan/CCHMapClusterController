@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Cchmapclustercontroller : High-performance map clustering with MapKit for iOS and OS X. Integrate with 4 lines of code." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Cchmapclustercontroller</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/yengtong888/CCHMapClusterController">View on GitHub</a>
+
+          <h1 id="project_title">Cchmapclustercontroller</h1>
+          <h2 id="project_tagline">High-performance map clustering with MapKit for iOS and OS X. Integrate with 4 lines of code.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/yengtong888/CCHMapClusterController/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/yengtong888/CCHMapClusterController/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="cchmapclustercontroller" class="anchor" href="#cchmapclustercontroller"><span class="octicon octicon-link"></span></a>CCHMapClusterController</h1>
+
+<p><a href="https://travis-ci.org/choefele/CCHMapClusterController"><img src="https://travis-ci.org/choefele/CCHMapClusterController.png?branch=master" alt="Build Status"></a></p>
+
+<p>If you have your project set up with an <code>MKMapView</code>, integrating clustering will take 4 lines of code:</p>
+
+<pre>
+<b>#import "CCHMapClusterController.h"</b>
+  
+@interface ViewController()
+
+<b>@property (strong, nonatomic) CCHMapClusterController *mapClusterController;</b>
+
+@end
+
+- (void)viewDidLoad
+{
+  [super viewDidLoad]
+    
+  NSArray annotations = ...
+  <b>self.mapClusterController = [[CCHMapClusterController alloc] initWithMapView:self.mapView];
+  [self.mapClusterController addAnnotations:annotations withCompletionHandler:NULL];</b>
+}
+</pre>
+
+<p align="center">
+  <img src="MapClustering.png" alt="Map Clustering" title="Map Clustering"></p>
+
+<p>Don't worry about manually updating the clusters; <code>CCHMapClusterController</code> automatically knows when changes have occurred that require the clusters to regroup.</p>
+
+<p>To try out the clustering, experiment with the examples included in this project, or download the app “Stolpersteine in Berlin” <a href="https://itunes.apple.com/de/app/stolpersteine-in-berlin/id640731757?mt=8&amp;uo=4"><img src="https://linkmaker.itunes.apple.com/htmlResources/assets//images/web/linkmaker/badge_appstore-sm.png" alt="Download on the App Store"></a>.</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Use <a href="http://cocoapods.org">CocoaPods</a> to easily integrate <code>CCHMapClusterController</code> into your project. Minimum deployment targets are 6.0 for iOS and 10.9 for OS X.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">platform</span> <span class="ss">:ios</span><span class="p">,</span> <span class="s1">'6.0'</span>
+<span class="n">pod</span> <span class="s2">"CCHMapClusterController"</span>
+</pre></div>
+
+<div class="highlight highlight-ruby"><pre><span class="n">platform</span> <span class="ss">:osx</span><span class="p">,</span> <span class="s1">'10.9'</span>
+<span class="n">pod</span> <span class="s2">"CCHMapClusterController"</span>
+</pre></div>
+
+<p>See <a href="https://github.com/choefele/CCHMapClusterController/blob/master/CHANGES.md">Changes.md</a> for a high-level overview of recent updates.</p>
+
+<h2>
+<a name="performance" class="anchor" href="#performance"><span class="octicon octicon-link"></span></a>Performance</h2>
+
+<p>The clustering algorithm splits a rectangular area of the map into a grid of square cells. For each cell, a representation for the annotations in this cell is selected and displayed. </p>
+
+<p>The quad tree implementation used to gather annotations for a cell is based on <a href="https://github.com/thoughtbot/TBAnnotationClustering/blob/master/TBAnnotationClustering/TBQuadTree.h">TBQuadTree</a> and is very fast. For this reason, performance is less dependent on the number of clustered annotations, but rather on the number of visible clusters on the map. This number can be configured with the cell size and the margin factor (see below). </p>
+
+<p>Other factors are the density of the clustered annotations (annotations spread over a large area cluster faster) and the way annotation views are implemented (if possible, use images instead of <code>drawRect:</code>).</p>
+
+<p>The examples in this project contain two data sets for testing: 5000+ annotations in a small area around Berlin and 80000+ annotations spread over the entire US. Both data sets perform fine on an iPhone 4S.</p>
+
+<h2>
+<a name="cell-size-and-margin-factor" class="anchor" href="#cell-size-and-margin-factor"><span class="octicon octicon-link"></span></a>Cell size and margin factor</h2>
+
+<p><code>CCHMapClusterController</code> has a property <code>cellSize</code> to configure the size of the cell in points (1 point = 2 pixels on Retina displays). This way, you can select a cell size that is large enough to display map icons with minimal overlap. More likely, however, you will choose the cell size to optimize clustering performance (the larger the size, the better the performance). The actual cell size used for clustering will be adjusted so that the map's width is a multiple of the cell size. This avoids realignment of cells when panning across the 180th meridian.</p>
+
+<p>The <code>marginFactor</code> property configures the additional map area around the visible area that's included for clustering. This avoids sudden changes at the edges of the visible area when the user pans the map. Ideally, you would set this value to 1.0 (100% additional map area on each side), as this is the maximum scroll area a user can achieve with a panning gesture. However, this affects performance as this will cover 9x the map area for clustering. The default is 0.5 (50% additional area on each side).</p>
+
+<p>To debug these settings, set the <code>debugEnabled</code> property to <code>YES</code>. This will display the clustering grid over the map.</p>
+
+<h2>
+<a name="customizing-cluster-annotations" class="anchor" href="#customizing-cluster-annotations"><span class="octicon octicon-link"></span></a>Customizing cluster annotations</h2>
+
+<p>Cluster annotations are of type <code>CCHMapClusterAnnotation</code>. You can customize their titles and subtitles by registering as a <code>CCHMapClusterControllerDelegate</code> with <code>CCHMapClusterController</code> and implementing two delegate methods.</p>
+
+<p>In these methods, <code>CCHMapClusterAnnotation</code> gives you access to the annotations contained in the cluster through the property <code>annotations</code>. An annotation in this array will always implement <code>MKAnnotation</code>, but is otherwise of same type as the instances you added to <code>CCHMapClusterController</code> when calling <code>addAnnotations:withCompletionHandler:</code>.</p>
+
+<p>Here is an example:</p>
+
+<div class="highlight highlight-Objective-C"><pre><span class="k">-</span> <span class="p">(</span><span class="n">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nf">mapClusterController:</span><span class="p">(</span><span class="n">CCHMapClusterController</span> <span class="o">*</span><span class="p">)</span><span class="nv">mapClusterController</span> <span class="nf">titleForMapClusterAnnotation:</span><span class="p">(</span><span class="n">CCHMapClusterAnnotation</span> <span class="o">*</span><span class="p">)</span><span class="nv">mapClusterAnnotation</span>
+<span class="p">{</span>
+    <span class="n">NSUInteger</span> <span class="n">numAnnotations</span> <span class="o">=</span> <span class="n">mapClusterAnnotation</span><span class="p">.</span><span class="n">annotations</span><span class="p">.</span><span class="n">count</span><span class="p">;</span>
+    <span class="n">NSString</span> <span class="o">*</span><span class="n">unit</span> <span class="o">=</span> <span class="n">numAnnotations</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">?</span> <span class="s">@"annotations"</span> <span class="o">:</span> <span class="s">@"annotation"</span><span class="p">;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">NSString</span> <span class="n">stringWithFormat</span><span class="o">:</span><span class="s">@"%tu %@"</span><span class="p">,</span> <span class="n">numAnnotations</span><span class="p">,</span> <span class="n">unit</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="k">-</span> <span class="p">(</span><span class="n">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nf">mapClusterController:</span><span class="p">(</span><span class="n">CCHMapClusterController</span> <span class="o">*</span><span class="p">)</span><span class="nv">mapClusterController</span> <span class="nf">subtitleForMapClusterAnnotation:</span><span class="p">(</span><span class="n">CCHMapClusterAnnotation</span> <span class="o">*</span><span class="p">)</span><span class="nv">mapClusterAnnotation</span>
+<span class="p">{</span>
+    <span class="n">NSUInteger</span> <span class="n">numAnnotations</span> <span class="o">=</span> <span class="n">MIN</span><span class="p">(</span><span class="n">mapClusterAnnotation</span><span class="p">.</span><span class="n">annotations</span><span class="p">.</span><span class="n">count</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+    <span class="n">NSArray</span> <span class="o">*</span><span class="n">annotations</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapClusterAnnotation</span><span class="p">.</span><span class="n">annotations</span><span class="p">.</span><span class="n">allObjects</span> <span class="n">subarrayWithRange</span><span class="o">:</span><span class="n">NSMakeRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">numAnnotations</span><span class="p">)];</span>
+    <span class="n">NSArray</span> <span class="o">*</span><span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="n">annotations</span> <span class="n">valueForKey</span><span class="o">:</span><span class="s">@"title"</span><span class="p">];</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">titles</span> <span class="n">componentsJoinedByString</span><span class="o">:</span><span class="s">@", "</span><span class="p">];</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Customizing the look of clustered annotations is possible via the standard <code>mapView:viewForAnnotation:</code> method that's part of <code>MKMapViewDelegate</code>. In addition, the delegate method <code>mapClusterController:willReuseMapClusterAnnotation:</code> is called when a cluster annotation is reused for a cell (see property <code>reuseExistingClusterAnnotations</code> below). The iOS example contains code that demonstrates how to display the current cluster size as part of the annotation view.</p>
+
+<h2>
+<a name="positioning-cluster-annotations" class="anchor" href="#positioning-cluster-annotations"><span class="octicon octicon-link"></span></a>Positioning cluster annotations</h2>
+
+<p>For aesthetic reasons, cluster annotations are not lined up evenly as this would make the underlying grid obvious. This library comes with two implementations to configure the position of cluster annotations:</p>
+
+<ul>
+<li>
+<code>CCHCenterOfMassMapClusterer</code> (default): computes the average of the coordinates of all annotations in a cluster</li>
+<li>
+<code>CCHNearCenterMapClusterer</code>: uses the position of the annotation in a cluster that's closest to the center</li>
+</ul><p>Instances of these classes can be assigned to <code>CCHMapClusterController</code>'s property <code>clusterer</code>. By implementing the protocol <code>CCHMapClusterer</code>, you can provide your own strategy for positioning cluster annotations.</p>
+
+<p>In addition, <code>CCHMapClusterController</code> by default reuses cluster annotations for a cell. This is beneficial for incrementally adding more annotations to the clustering (e.g. when downloading batches of data) because you want to avoid the cluster annotation jumping around during updates. Set <code>reuseExistingClusterAnnotations</code> to <code>NO</code> if you don't want this behavior.</p>
+
+<h2>
+<a name="animations" class="anchor" href="#animations"><span class="octicon octicon-link"></span></a>Animations</h2>
+
+<p>By default, annotation views for cluster annotations receive an animation that fades the view in when added and out when removed (<code>CCHFadeInOutAnimator</code>). You can provide your own animation code by implementing the protocol <code>CCHMapAnimator</code> and changing <code>CCHMapClusterController</code>'s property <code>animator</code>.</p>
+
+<h2>
+<a name="finding-a-clustered-annotation" class="anchor" href="#finding-a-clustered-annotation"><span class="octicon octicon-link"></span></a>Finding a clustered annotation</h2>
+
+<p>A common use case is to have a search field where the user can make a choice from a list of matching annotations. Selecting an annotation would then zoom to its position on the map.</p>
+
+<p>For this to work, you have to figure out which cluster contains the selected annotation. In addition, the clustering changes while zooming thus requiring an incremental approach to finding the cluster that contains the annotation the user is looking for.</p>
+
+<p><code>CCHMapClusterController</code> contains an easy to use interface to help you with this:</p>
+
+<div class="highlight highlight-Objective-C"><pre><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">mapClusterController</span> <span class="n">selectAnnotation</span><span class="o">:</span><span class="n">annotation</span> 
+       <span class="n">andZoomToRegionWithLatitudinalMeters</span><span class="o">:</span><span class="mi">1000</span> 
+                         <span class="n">longitudinalMeters</span><span class="o">:</span><span class="mi">1000</span><span class="p">];</span>
+</pre></div>
+
+<h2>
+<a name="license-mit" class="anchor" href="#license-mit"><span class="octicon octicon-link"></span></a>License (MIT)</h2>
+
+<p>Copyright (C) 2013 Claus Höfele</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Cchmapclustercontroller maintained by <a href="https://github.com/yengtong888">yengtong888</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
